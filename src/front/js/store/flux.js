@@ -56,12 +56,14 @@ const getState = ({ getStore, getActions, setStore }) => {
 
 			checkUser: async () => {
 				try {
+					const store = getStore();
 					const resp = await fetch(`${store.URL}/protected`,{
 						headers: {
 							'Authorization': `Bearer ${localStorage.getItem('token')}`
 						}
 					})
-					if (!resp.ok) throw new Error('Algo fue mal...');
+					if (!resp.ok) throw new Error('Algo fue mal...')
+					if(resp.status!== 200) throw new Error('Algo fue peor..')
 					const data = await resp.json()
 					console.log(data)
 					setStore({token: data.token, auth: true, user: data.user})

@@ -56,7 +56,7 @@ def login():
         check_user = User.query.filter_by(email=email).first()
 
         if check_user.password == password:
-            access_token = create_access_token(identity=check_user.id)
+            access_token = create_access_token(identity=str(check_user.id))
             return ({'msg': 'ok', 'token':access_token}), 201
         return jsonify({'msg': 'Usuario vinculado a este correo, inicia sesión'}), 400
     except Exception as error:
