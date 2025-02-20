@@ -1,52 +1,77 @@
 const getState = ({ getStore, getActions, setStore }) => {
 	return {
 		store: {
+			URL: 'https://effective-chainsaw-wr94pvrrp5qw3r-3001.app.github.dev/api',
 			message: null,
-			demo: [
-				{
-					title: "FIRST",
-					background: "white",
-					initial: "white"
-				},
-				{
-					title: "SECOND",
-					background: "white",
-					initial: "white"
-				}
-			]
 		},
 		actions: {
-			// Use getActions to call a function within a fuction
-			exampleFunction: () => {
-				getActions().changeColor(0, "green");
-			},
-
-			getMessage: async () => {
-				try{
-					// fetching data from the backend
-					const resp = await fetch(process.env.BACKEND_URL + "/api/hello")
+			register: async (formData) => {
+				try {
+					const store = getStore();
+					const resp = await fetch(`${store.URL}/register`, {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json'
+						},
+						body: JSON.stringify(formData)
+					})
 					const data = await resp.json()
-					setStore({ message: data.message })
-					// don't forget to return something, that is how the async resolves
-					return data;
-				}catch(error){
-					console.log("Error loading message from backend", error)
+					if (!resp.ok) {
+						if (data.msg === 'Usuario vinculado a este correo, inicia sesión') {
+							alert('Este correo ya está registrado. Por favor, inicia sesión.');
+						} else {
+							alert(`Error en el registro: ${data.error || 'Algo fue mal...'}`);
+						}
+						return false;
+					}
+					localStorage.setItem('token', data.token)
+					setStore({token: data.token, auth: true})
+					return true
+				} catch (error) {
+					console.log(error)
+					return false
 				}
 			},
-			changeColor: (index, color) => {
-				//get the store
-				const store = getStore();
 
-				//we have to loop the entire demo array to look for the respective index
-				//and change its color
-				const demo = store.demo.map((elm, i) => {
-					if (i === index) elm.background = color;
-					return elm;
-				});
+			login: async (formData) => {
+				try {
+					const store = getStore();
+					const resp = await fetch(`${store.URL}/login`, {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json'
+						},
+						body: JSON.stringify(formData)
+					})
+					if (!resp.ok) throw new Error('Algo fue mal...');
+					const data = await resp.json()
+					localStorage.setItem('token', data.token)
+					setStore({token: data.token, auth: true})
+					return true
+				} catch (error) {
+					console.log(error)
+					return false
+				}
+			},
 
-				//reset the global store
-				setStore({ demo: demo });
-			}
+			checkUser: async () => {
+				try {
+					const resp = await fetch(`${store.URL}/protected`,{
+						headers: {
+							'Authorization': `Bearer ${localStorage.getItem('token')}`
+						}
+					})
+					if (!resp.ok) throw new Error('Algo fue mal...');
+					const data = await resp.json()
+					console.log(data)
+					setStore({token: data.token, auth: true, user: data.user})
+
+					return true;
+				} catch (error) {
+					console.log(error)
+					return false
+				}
+			},
 		}
 	};
 };
